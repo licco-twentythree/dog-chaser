@@ -5,7 +5,8 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    public float moveSpeed;
+    private float moveSpeed;
+    public float walkSpeed;
 
     public float groundDrag;
 
@@ -14,9 +15,14 @@ public class PlayerMovement : MonoBehaviour
     public float airMultiplier;
     bool readyToJump = true;
 
-    [Header("Keybinds")]
+    [Header("Crouching")]
+    public float crouchSpeed;
+    public float crouchYScale;
+    private float startYScale;
 
+    [Header("Keybinds")]
     public KeyCode jumpKey = KeyCode.Space;
+    public KeyCode crouchKey = KeyCode.LeftControl;
 
     [Header("Ground Check")]
     public float playerHeight;
@@ -33,11 +39,22 @@ public class PlayerMovement : MonoBehaviour
 
     Rigidbody rb;
 
+    public MovementState state;
+
+    public enum MovementState {
+        walking,
+        air,
+        crouching
+    }
+
     // Start is called before the first frame update
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
+        readyToJump = true;
+
+        startYScale = transform.localScale.y;
     }
 
     // Update is called once per frame
@@ -47,11 +64,28 @@ public class PlayerMovement : MonoBehaviour
 
         MyInput();
         SpeedControl();
-
+        StateHandler();
         if (grounded)
             rb.drag = groundDrag;
         else
             rb.drag = 0;
+    }
+
+    private void StateHandler() {
+        //walking 
+        if (grounded)
+        {
+            state = MovementState.walking;
+            moveSpeed = walkSpeed;
+        }
+
+        if (Input.GetKey(crouchKey)) {
+            state = MovementState.crouching;
+            moveSpeed = crouchSpeed;
+        }
+
+        //air
+        else { state = MovementState.air; }
     }
 
     void FixedUpdate()
@@ -69,6 +103,15 @@ public class PlayerMovement : MonoBehaviour
             Jump();
 
             Invoke(nameof(ResetJump), jumpCooldown);
+        }
+
+        if (Input.GetKey(crouchKey)) {
+            transform.localScale = new Vector3(transform.localScale.x, crouchYScale, transform.localScale.z);
+            rb.AddForce(Vector3.down * 5f, ForceMode.Impulse);
+        }
+
+        if (Input.GetKeyUp(crouchKey)) {
+            transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
         }
 
     }
