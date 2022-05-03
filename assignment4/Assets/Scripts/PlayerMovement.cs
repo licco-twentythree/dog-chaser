@@ -5,7 +5,7 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
-    private float moveSpeed;
+    public float moveSpeed;
     public float walkSpeed;
     public float groundDrag;
     public float slideSpeed;
@@ -34,6 +34,7 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Ground Check")]
     public float playerHeight;
+    public float playerWidth = 2;
     public LayerMask whatIsGround;
 
     [Header("Slope Handling")]
@@ -58,7 +59,8 @@ public class PlayerMovement : MonoBehaviour
         walking,
         air,
         crouching,
-        sliding
+        sliding, 
+        stopping
     }
 
     public bool sliding;
@@ -78,6 +80,9 @@ public class PlayerMovement : MonoBehaviour
     {
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
 
+        
+        if (HitWall()) Debug.Log("Wallhit");
+
         MyInput();
         SpeedControl();
         StateHandler();
@@ -91,15 +96,17 @@ public class PlayerMovement : MonoBehaviour
     private void StateHandler() {
         //walking 
 
-        if (sliding) {
+        if (sliding)
+        {
             state = MovementState.sliding;
 
             if (OnSlope() && rb.velocity.y < 0.1f)
             {
-                
+
                 desiredMoveSpeed = slideSpeed;
             }
-            else {
+            else
+            {
                 desiredMoveSpeed = walkSpeed;
             }
 
@@ -110,7 +117,8 @@ public class PlayerMovement : MonoBehaviour
             desiredMoveSpeed = walkSpeed;
         }
 
-        else if (Input.GetKey(crouchKey) && grounded) {
+        else if (Input.GetKey(crouchKey) && grounded)
+        {
             state = MovementState.crouching;
             desiredMoveSpeed = crouchSpeed;
         }
@@ -118,12 +126,16 @@ public class PlayerMovement : MonoBehaviour
         //air
         else { state = MovementState.air; }
 
+        //lerp speed
+
         if (Mathf.Abs(desiredMoveSpeed - lastDesiredMoveSpeed) > 4f && moveSpeed != 0)
         {
             StopAllCoroutines();
             StartCoroutine(SmoothlyLerpMoveSpeed());
         }
-        else {
+        
+        else
+        {
             moveSpeed = desiredMoveSpeed;
         }
 
@@ -157,6 +169,12 @@ public class PlayerMovement : MonoBehaviour
             transform.localScale = new Vector3(transform.localScale.x, startYScale, transform.localScale.z);
         }
 
+        //test functions
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            StopAllCoroutines(); 
+        }
     }
 
     private void MovePlayer() {
@@ -164,13 +182,13 @@ public class PlayerMovement : MonoBehaviour
 
         //on slop
         if (OnSlope() && !exitingSlope) {
-            rb.AddForce(GetSlopeMovement(moveDirection) * moveSpeed * 20f, ForceMode.Force);
+            rb.AddForce(GetSlopeMovement(moveDirection).normalized * moveSpeed * 20f, ForceMode.Force);
             if (rb.velocity.y > 0) {
                 rb.AddForce(Vector3.down * 80f, ForceMode.Force);
             }
         }
 
-        if (grounded)
+        if (grounded && !OnSlope())
             rb.AddForce(moveDirection.normalized * moveSpeed * 10f, ForceMode.Force);
 
         else if (!grounded)
@@ -220,11 +238,16 @@ public class PlayerMovement : MonoBehaviour
     }
 
     public bool OnSlope() {
-        if (Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight * 0.5f)) {
-            float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
-            return angle < maxSlopeAngle && angle != 0;
+        if (Physics.Raycast(transform.position, Vector3.down, out slopeHit, playerHeight * 0.5f + 0.3f))
+        {
+            if (slopeHit.normal != Vector3.up)
+            {
+                return true;
+            }
+            //float angle = Vector3.Angle(Vector3.up, slopeHit.normal);
+            //return angle < maxSlopeAngle && angle != 0;
         }
-
+        
         return false;
     }
 
@@ -239,12 +262,59 @@ public class PlayerMovement : MonoBehaviour
 
         while (time < differece) {
             moveSpeed = Mathf.Lerp(startValue, desiredMoveSpeed, time / differece);
-            time += Time.deltaTime;
+
+            if (OnSlope())
+            {
+                float slopeAngle = Vector3.Angle(Vector3.up, slopeHit.normal);
+                float slopeAngleIncrease = 1 + (slopeAngle / 90f);
+
+                time += Time.deltaTime * speedIncreaseMultiplier * slopeIncreaseMultiplier * slopeAngleIncrease;
+            }
+            else {
+                time += Time.deltaTime * speedIncreaseMultiplier;
+            }
+
+            if (!PlayerMoving() || HitWall())
+            {
+                StopAllCoroutines();
+                moveSpeed = walkSpeed;
+                Debug.Log("stopped moving");
+            }
             yield return null;
-            //yield return null;
         }
 
-        moveSpeed = desiredMoveSpeed;
+
+
+
+
+        /* float time = 0;
+         float differece = Mathf.Abs(desiredMoveSpeed - moveSpeed);
+         float startValue = moveSpeed;
+
+         while (time < differece) {
+             moveSpeed = Mathf.Lerp(startValue, desiredMoveSpeed, time / differece);
+             time += Time.deltaTime;
+             yield return null;
+             //yield return null;
+         }
+
+         moveSpeed = desiredMoveSpeed; */
+    }
+
+    private bool PlayerMoving() {
+        if (horizontalInput != 0 || verticalInput != 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private bool HitWall() {
+        Vector3 playerPosition = transform.position;
+        Vector3 playerDirection = orientation.forward;
+        
+        Ray hitWallRay = new Ray(playerPosition, playerDirection);
+        Debug.DrawRay(playerPosition, playerDirection * playerWidth * 0.5f);
+        return Physics.Raycast(hitWallRay, playerWidth * 0.5f + 0.2f);
     }
 
 }
