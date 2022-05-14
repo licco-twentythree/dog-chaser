@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerMovement : MonoBehaviour
 {
     [Header("Movement")]
+    public GameManager gm;
     public float moveSpeed;
     public float walkSpeed;
     public float groundDrag;
@@ -68,6 +69,8 @@ public class PlayerMovement : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        GameObject g = GameObject.FindGameObjectWithTag("GameController");
+        gm = g.GetComponent<GameManager>();
         rb = GetComponent<Rigidbody>();
         rb.freezeRotation = true;
         readyToJump = true;
@@ -80,7 +83,6 @@ public class PlayerMovement : MonoBehaviour
     {
         grounded = Physics.Raycast(transform.position, Vector3.down, playerHeight * 0.5f + 0.2f, whatIsGround);
 
-        
         if (HitWall()) Debug.Log("Wallhit");
 
         MyInput();
@@ -144,7 +146,8 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        MovePlayer();
+        if (gm.playerCanMove == true)
+           MovePlayer();
     }
 
     void MyInput()
