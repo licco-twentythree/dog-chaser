@@ -41,7 +41,8 @@ public class DogController : MonoBehaviour
 
     private void Destroy()
     {
-        gm.setPlayerCanMove();
+        gm.setPlayerCanMove(true);
+        gm.setReadytoCountDown(true);
         dog.SetActive(false);
     }
 

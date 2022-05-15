@@ -7,7 +7,7 @@ using TMPro;
 public class CountDownTimer : MonoBehaviour
 {
     public GameManager gm;
-    private float time;
+    public float time;
     [SerializeField] private float startingTime;
     [SerializeField] TextMeshProUGUI countDownText;
     // Start is called before the first frame update
@@ -23,8 +23,10 @@ public class CountDownTimer : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        time -= 1 * Time.deltaTime;
-        countDownText.text = time.ToString("0.##");
-
+        if (gm.readytoCountdown == true)
+        {
+            time -= 1 * Time.deltaTime;
+            countDownText.text = time.ToString("0.#");
+        }
     }
 }
