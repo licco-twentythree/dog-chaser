@@ -146,7 +146,7 @@ public class PlayerMovement : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (gm.playerCanMove == true)
+        if (gm.playerCanMove)   
            MovePlayer();
     }
 
