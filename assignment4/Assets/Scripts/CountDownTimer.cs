@@ -31,7 +31,7 @@ public class CountDownTimer : MonoBehaviour
 
     void CountDown() {
             time -= 1 * Time.deltaTime;
-            countDownText.text = time.ToString("0.0");
+            countDownText.text = time.ToString("0.0") + "s";
         if (time <= 0f) {
             gm.setPlayerHasLost(true);
         }
