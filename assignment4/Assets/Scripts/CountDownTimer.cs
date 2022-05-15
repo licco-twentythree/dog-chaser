@@ -25,8 +25,15 @@ public class CountDownTimer : MonoBehaviour
     {
         if (gm.readytoCountdown == true)
         {
+            CountDown();
+        }
+    }
+
+    void CountDown() {
             time -= 1 * Time.deltaTime;
             countDownText.text = time.ToString("0.#");
+        if (time <= 0f) {
+            gm.setPlayerHasLost(true);
         }
     }
 }

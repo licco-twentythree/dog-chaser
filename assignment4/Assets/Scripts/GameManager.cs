@@ -27,5 +27,9 @@ public class GameManager : MonoBehaviour
     {
         playerHasWon = set;
     }
-
+    
+    public void setPlayerHasLost(bool set)
+    {
+        playerHasLost = set;
+    }
 }
